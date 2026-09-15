@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="color-scheme" content="light" />
+  <title>수거관리팀 품목판정 아카이브</title>
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="품목판정 아카이브 홈">
+      <img src="assets/logo.png" alt="e-순환로지스 Cycle Logis" />
+    </a>
+    <div class="top-title">
+      <span>ITEM CLASSIFICATION ARCHIVE</span>
+      <strong>품목판정 아카이브</strong>
+    </div>
+    <div class="top-actions">
+      <button class="btn ghost" id="docsBtn">☰ 공식 기준</button>
+      <button class="btn ghost" id="adminModeBtn">✎ 관리자 편집</button>
+      <button class="btn primary hidden" id="newCaseBtn">＋ 신규 사례 등록</button>
+    </div>
+  </header>
+
+  <div id="draftBanner" class="draft-banner hidden">
+    <div>
+      <strong>이 PC에 아직 게시하지 않은 수정본이 있습니다.</strong>
+      <span>수정내용은 이 브라우저에만 보입니다. 완료되면 “게시용 data.json 받기”를 눌러 GitHub에 덮어쓰세요.</span>
+    </div>
+    <div class="draft-actions">
+      <button class="btn small" id="exportTopBtn">게시용 data.json 받기</button>
+      <button class="btn small danger-outline" id="resetDraftBtn">게시본으로 되돌리기</button>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">PHOTO-BASED CASE SEARCH</span>
+      <h1>헷갈리는 품목,<br />사진으로 찾아보기.</h1>
+      <p>기존 판정사례와 크기·특징·수량 기준을 비교하고 유사한 사례를 빠르게 확인할 수 있습니다.</p>
+    </div>
+    <div class="search-panel">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input id="searchInput" type="search" autocomplete="off" placeholder="예: 모니터, 복사기, 높이 175cm, 특대형1" />
+        <kbd>Ctrl K</kbd>
+      </div>
+      <div class="quick-search">
+        <span>빠른 검색</span>
+        <button data-query="모니터">모니터</button>
+        <button data-query="복사기">복사기</button>
+        <button data-query="냉장고">냉장고</button>
+        <button data-query="제빙기">제빙기</button>
+        <button data-query="정수기">정수기</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div><strong id="caseCount">0</strong><span>등록 사례</span></div>
+      <div><strong id="photoCount">0</strong><span>사례 사진</span></div>
+      <div><strong id="pendingCount">0</strong><span>판정 필요</span></div>
+    </div>
+  </section>
+
+  <main class="content-wrap">
+    <aside class="filters">
+      <div class="filter-head">
+        <div><span>FILTER</span><strong>검색 조건</strong></div>
+        <button id="resetFiltersBtn" class="text-btn">초기화</button>
+      </div>
+
+      <div class="filter-block">
+        <h3>판정 상태</h3>
+        <label><input type="radio" name="status" value="all" checked /> 전체 <em id="allStatusCount">0</em></label>
+        <label><input type="radio" name="status" value="확정" /> 확정 사례 <em id="confirmedCount">0</em></label>
+        <label><input type="radio" name="status" value="판정 필요" /> 판정 필요 <em id="pendingFilterCount">0</em></label>
+      </div>
+
+      <div class="filter-block">
+        <h3>분류 그룹</h3>
+        <label><input type="checkbox" class="group-filter" value="크기분류" /> 크기분류</label>
+        <label><input type="checkbox" class="group-filter" value="비대상" /> 비대상</label>
+        <label><input type="checkbox" class="group-filter" value="고유품목" /> 고유품목</label>
+        <label><input type="checkbox" class="group-filter" value="판정대기" /> 판정대기</label>
+      </div>
+
+      <div class="filter-block">
+        <h3>최종 분류</h3>
+        <select id="classFilter"><option value="all">전체 분류</option></select>
+      </div>
+
+      <div class="admin-mini hidden" id="adminMini">
+        <strong>관리자 편집 모드</strong>
+        <p>수정 내용은 현재 PC에 임시 저장됩니다.</p>
+        <button class="btn small primary" id="exportBtn">게시용 data.json 받기</button>
+        <label class="btn small ghost file-label">data.json 불러오기<input id="importJsonInput" type="file" accept="application/json,.json" hidden /></label>
+        <button class="btn small danger-outline" id="resetDraftBtn2">게시본으로 되돌리기</button>
+      </div>
+
+      <div class="notice-box">
+        <strong>판정 시 확인사항</strong>
+        <p>사진만으로 확정하기보다 실제 크기·중량·분리 여부와 공식 기준을 함께 확인하세요.</p>
+      </div>
+    </aside>
+
+    <section class="library">
+      <div class="library-head">
+        <div>
+          <span>CASE LIBRARY</span>
+          <h2>품목 판정사례</h2>
+          <p id="resultMessage">자료를 불러오는 중입니다.</p>
+        </div>
+        <div class="library-tools">
+          <button class="btn ghost" id="compareOpenBtn" disabled>비교하기 <b id="compareCount">0</b></button>
+          <select id="sortSelect">
+            <option value="recent">최근 등록순</option>
+            <option value="number">사례 번호순</option>
+            <option value="name">품목명순</option>
+          </select>
+        </div>
+      </div>
+      <div id="caseGrid" class="case-grid" aria-live="polite"></div>
+      <div id="emptyState" class="empty-state hidden">
+        <strong>검색 결과가 없습니다.</strong>
+        <span>다른 품목명이나 특징으로 검색해 보세요.</span>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop hidden" id="detailModal">
+    <div class="modal detail-modal" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close="detailModal">×</button>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="compareModal">
+    <div class="modal wide-modal" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close="compareModal">×</button>
+      <div class="modal-heading"><span>COMPARE</span><h2>사례 비교</h2></div>
+      <div id="compareContent" class="compare-grid"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="editorModal">
+    <div class="modal editor-modal" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close="editorModal">×</button>
+      <div class="modal-heading"><span>ADMIN EDITOR</span><h2 id="editorTitle">신규 사례 등록</h2></div>
+      <form id="editorForm">
+        <input type="hidden" id="editId" />
+        <div class="form-grid">
+          <label class="span-2">품목명*<input id="editName" required maxlength="120" /></label>
+          <label>상태<select id="editStatus"><option>확정</option><option>판정 필요</option></select></label>
+          <label>최종분류<input id="editFinalClass" placeholder="예: 중형, 특대형1, 비대상(대)" /></label>
+          <label>그룹<select id="editGroup"><option>크기분류</option><option>비대상</option><option>고유품목</option><option>판정대기</option></select></label>
+          <label>기준등록일<input id="editEffectiveDate" type="date" /></label>
+          <label class="span-2">유사검색어<input id="editAliases" placeholder="모니터, 디스플레이, 전산장비" /></label>
+          <label>크기<input id="editDimensions" placeholder="가로×세로×높이" /></label>
+          <label>중량<input id="editWeight" placeholder="예: 10.7kg" /></label>
+          <label class="span-2">주요특징<textarea id="editDetail" rows="3"></textarea></label>
+          <label class="span-2">수량기준<textarea id="editQuantityRule" rows="2"></textarea></label>
+          <label class="span-2">판정근거<textarea id="editDecisionBasis" rows="3"></textarea></label>
+          <label>자료출처<input id="editSource" placeholder="예: 현장 문의사진" /></label>
+        </div>
+
+        <div class="image-editor">
+          <div class="image-editor-head">
+            <div><strong>사례 사진</strong><span>최대 5장 · 새 사진은 자동으로 크기를 줄여 data.json에 포함됩니다.</span></div>
+            <label class="btn small ghost file-label">＋ 사진 추가<input type="file" id="imageInput" accept="image/*" multiple hidden /></label>
+          </div>
+          <div id="imagePreviewGrid" class="image-preview-grid"></div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn danger-outline hidden" id="deleteCaseBtn">사례 삭제</button>
+          <div class="spacer"></div>
+          <button type="button" class="btn ghost" data-close="editorModal">취소</button>
+          <button type="submit" class="btn primary">임시 저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="docsModal">
+    <div class="modal docs-modal" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close="docsModal">×</button>
+      <div class="modal-heading"><span>REFERENCE</span><h2>공식 기준문서</h2></div>
+      <div class="doc-list">
+        <a href="docs/기타품목_분류기준.pdf" target="_blank"><strong>기타품목 · 비대상 분류기준</strong><span>PDF 열기 →</span></a>
+        <a href="docs/품목별_구분표.pdf" target="_blank"><strong>기타품목 품목별 구분표</strong><span>PDF 열기 →</span></a>
+        <a href="docs/냉장고_품목기준.pdf" target="_blank"><strong>냉장고 품목 수정 기준표</strong><span>PDF 열기 →</span></a>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
